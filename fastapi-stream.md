@@ -50,6 +50,48 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
+
+OpenAI python
+```python
+import openai
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
+import os
+
+app = FastAPI()
+
+# 设置OpenAI的API密钥
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+async def openai_streaming_response():
+    response = openai.Completion.create(
+        engine="davinci-codex",
+        prompt="Translate the following English text to French: '{}'",
+        max_tokens=100,
+        stream=True
+    )
+    
+    token_count = 0
+
+    for event in response:
+        if 'choices' in event:
+            text = event['choices'][0]['text']
+            token_count += len(text.split())
+            yield text
+    
+    yield f"\n[INFO] Total tokens used: {token_count}"
+
+@app.get("/stream")
+async def stream_endpoint(request: Request):
+    return StreamingResponse(openai_streaming_response(), media_type="text/plain")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+```
+
+
 ```html
 <!DOCTYPE html>
 <html>
